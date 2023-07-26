@@ -9,31 +9,32 @@
     </div>
   </div>
 </template>
+
 <script>
-import { EventBus } from "../EventBus.js";
+import { ref, watch } from 'vue';
+import EventBus from "../EventBus.js";
 
 export default {
   name: "DemoCommands",
-  data() {
+  setup() {
+    const commands = ref([
+      { name: "infinite", value: true },
+      { name: "mouseWheel", value: true },
+      { name: "slider", value: true },
+      { name: "animation", value: true }
+    ]);
+
+    watch(commands, (newVal) => {
+      EventBus.emit("newCommand", newVal);
+    }, { deep: true });
+
     return {
-      commands: [
-        { name: "infinite", value: true },
-        { name: "mouseWheel", value: true },
-        { name: "slider", value: true },
-        { name: "animation", value: true }
-      ]
+      commands
     };
-  },
-  watch: {
-    commands: {
-      handler(data) {
-        EventBus.$emit("newCommand", data);
-      },
-      deep: true
-    }
   }
 };
 </script>
+
 <style>
 .demo-commands {
   display: flex;

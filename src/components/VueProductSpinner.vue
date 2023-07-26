@@ -20,241 +20,271 @@
         :max="spinner.size"
         :value="spinner.current"
         class="vue-product-spinner-slider"
-        :class="sliderClass"
+        :class="props.sliderClass"
         @input="handleSlider"
-        v-if="slider"
+        v-if="props.slider"
       />
     </template>
     <slot v-else>Loading images...</slot>
   </picture>
 </template>
 
-<script>
-import PreloadImages from "../PreloadImages.js";
+<script setup>
+  import { ref, onMounted, onUnmounted, reactive, nextTick } from 'vue';
+  import { defineProps } from 'vue';
+  import PreloadImages from "../PreloadImages.js";
 
-export default {
-  name: "VueProductSpinner",
-  props: {
+  const props = defineProps({
     images: {
       type: Array,
       required: true,
+      default: () => [],
     },
     infinite: {
       type: Boolean,
       required: false,
-      default: () => true,
+      default: true,
     },
     speed: {
       type: Number,
       required: false,
-      default: () => 3,
+      default: 3,
     },
     mouseWheel: {
       type: Boolean,
       required: false,
-      default: () => false,
+      default: false,
     },
     slider: {
       type: Boolean,
       required: false,
-      default: () => false,
+      default: false,
     },
     sliderClass: {
       type: String,
       required: false,
-      default: () => "",
+      default: "",
     },
     animation: {
       type: Boolean,
       required: false,
-      default: () => false,
+      default: false,
     },
-  },
-  data() {
-    return {
-      imagesPreloaded: false,
-      speedController: 0,
-      spinner: {
-        current: 0,
-        size: 0,
-        currentPath: null,
-      },
-      mouse: {
-        isMoving: false,
-        isDragging: false,
-      },
-      touch: {
-        isMoving: false,
-        initialX: 0,
-        isDragging: false,
-      },
-      animationRequestID: 0,
-      lastPosition: 0,
-    };
-  },
-  watch: {
-    images: function() {
-      this.imagesPreloaded = false;
-      this.handlePreload();
-      this.initSpinner();
+  });
+
+  console.log('Initial props.images:', props.images);
+  console.log('Props: ', props);
+  const imagesPreloaded = ref(false);
+  const speedController = ref(0);
+  const spinner = reactive({
+    current: 0,
+    size: 0,
+    currentPath: null,
+  });
+
+  const mouse = reactive({
+    isMoving: false,
+    isDragging: false,
+  });
+  const touch = reactive({
+    isMoving: false,
+    initialX: 0,
+    isDragging: false,
+  });
+  const animationRequestID = ref(0);
+  const lastPosition = ref(0);
+  const componentContainer = ref(null);
+
+  const handleMouseDragging = () => {
+    mouse.isDragging = false;
+  }
+
+  const handleTouchDragging = () => {
+    touch.isDragging = false;
+  }
+
+  const handleWheel = (event) => {
+    if (props.mouseWheel) {
+      event.preventDefault();
+      handleMovement(event.deltaY);
     }
-  },
-  created() {
-    this.initSpinner();
-  },
-  beforeMount() {
-    this.handlePreload();
-  },
-  mounted() {
+  }
+
+  const initSpinner = () => {
+    console.log('Init spinner');
+    spinner.size = props.images.length;
+    if (props.animation) {
+      spinImages(0, spinner.size);
+    } else {
+      spinner.currentPath = props.images[0];
+    }
+  }
+
+  const handlePreload = async () => {
+    if (Array.isArray(props.images) && props.images.length > 0) {
+      console.log('Preloading images...');
+      await PreloadImages(props.images)
+        .then(() => {
+          console.log('Images have been preloaded.');
+          imagesPreloaded.value = true;
+          console.log('imagesPreloaded value after preloading:', imagesPreloaded.value);
+        })
+        .catch(error => {
+          console.error('Error preloading images:', error);
+        });
+    } else {
+      console.log('No images to preload.');
+    }
+    console.log('imagesPreloaded.value:', imagesPreloaded.value);
+  }
+
+  onMounted(async () => {
+    await nextTick();
+    console.log("componentContainer at mount:", componentContainer.value);
+
+    if (Array.isArray(props.images) && props.images.length > 0) {
+      imagesPreloaded.value = false;
+      await handlePreload();
+      initSpinner();
+    }
+    console.log(imagesPreloaded.value);
+
     window.addEventListener(
       'mouseup',
-      this.handleMouseDragging,
+      handleMouseDragging,
     );
     window.addEventListener(
       'touchend',
-      this.handleTouchDragging,
+      handleTouchDragging,
     );
-    if (this.mouseWheel) {
-      this.$refs.componentContainer.addEventListener(
+
+    if (props.mouseWheel && componentContainer.value) {
+      componentContainer.value.addEventListener(
         'wheel',
-        this.handleWheel,
+        handleWheel,
         false,
       );
     }
-  },
-  beforeDestroy() {
-    if (this.mouseWheel) {
-      this.$refs.componentContainer.removeEventListener(
+  });
+
+  onUnmounted(() => {
+    if (props.mouseWheel && componentContainer.value) {
+      componentContainer.value.removeEventListener(
         'wheel',
-        this.handleWheel,
+        handleWheel,
       );
     }
     window.removeEventListener(
       'mouseup',
-      this.handleMouseDragging,
+      handleMouseDragging,
     );
     window.removeEventListener(
       'touchend',
-      this.handleTouchDragging,
+      handleTouchDragging,
     );
-  },
-  methods: {
-    initSpinner() {
-      this.spinner.size = this.images.length;
-      if (this.animation) {
-        this.spinImages(0, this.spinner.size);
-      } else {
-        this.spinner.currentPath = this.images[0];
-      }
-    },
-    handlePreload() {
-      PreloadImages(this.images).then(() => (this.imagesPreloaded = true));
-    },
-    handleKeydown(event) {
-      if (event.keyCode === 39) {
-        event.preventDefault();
-        this.handleMovement(this.lastPosition + 1);
-      }
-      if (event.keyCode === 37) {
-        event.preventDefault();
-        this.handleMovement(this.lastPosition - 1);
-      }
-    },
-    handleWheel(event) {
-      if (this.mouseWheel) {
-        event.preventDefault();
-        this.handleMovement(event.deltaY);
-      }
-    },
-    handleSlider(event) {
-      this.spinner.current = Number(event.target.value);
-      this.spinner.currentPath = this.images[event.target.value - 1];
-    },
-    handleMouseDown() {
-      if (this.animation) {
-        this.stopAnimation();
-      }
-      this.mouse.isDragging = true;
-      this.mouse.isMoving = true;
-    },
-    handleMouseUp() {
-      this.mouse.isMoving = false;
-    },
-    handleMouseMove(event) {
-      if (this.mouse.isMoving && this.mouse.isDragging) {
-        this.handleMovement(event.pageX);
-      }
-    },
-    handleMouseDragging() {
-      this.mouse.isDragging = false;
-    },
-    handleTouchDragging() {
-      this.touch.isDragging = false;
-    },
-    handleTouchStart(event) {
+  });
+
+  const handleKeydown = (event) => {
+    if (event.keyCode === 39) {
       event.preventDefault();
-      if (this.animation) {
-        this.stopAnimation();
+      handleMovement(lastPosition.value + 1);
+    }
+    if (event.keyCode === 37) {
+      event.preventDefault();
+      handleMovement(lastPosition.value - 1);
+    }
+  }
+
+  const handleSlider = (event) => {
+    spinner.current = Number(event.target.value);
+    spinner.currentPath = props.images[event.target.value - 1];
+  }
+
+  const handleMouseDown = () => {
+    if (props.animation) {
+      stopAnimation();
+    }
+    mouse.isDragging = true;
+    mouse.isMoving = true;
+  }
+
+  const handleMouseUp = () => {
+    mouse.isMoving = false;
+  }
+
+  const handleMouseMove = (event) => {
+    if (mouse.isMoving && mouse.isDragging) {
+      handleMovement(event.pageX);
+    }
+  }
+
+  const handleTouchStart = (event) => {
+    event.preventDefault();
+    if (props.animation) {
+      stopAnimation();
+    }
+    touch.isMoving = true;
+    touch.isDragging = true;
+    touch.initialX = event.touches[0].pageX;
+  }
+
+  const handleTouchEnd = () => {
+    touch.isMoving = false;
+  }
+
+  const handleTouchMove = (event) => {
+    if (touch.isDragging) {
+      const delta = -(touch.initialX - event.touches[0].pageX);
+      handleMovement(delta);
+    }
+  }
+
+  const spinImages = (index, lastIndex) => {
+    let i = index;
+    if (i !== lastIndex) {
+      spinner.currentPath = props.images[i];
+      animationRequestID.value = window.requestAnimationFrame(() => spinImages(i, lastIndex));
+    } else {
+      stopAnimation();
+      [spinner.currentPath] = props.images;
+      return;
+    }
+    i += 1;
+  }
+
+  const stopAnimation = () => {
+    if (animationRequestID.value) {
+      window.cancelAnimationFrame(animationRequestID.value);
+      animationRequestID.value = null;
+    }
+  }
+
+  const handleMovement = (delta) => {
+    speedController.value += 1;
+    if (speedController.value < props.speed) {
+      return;
+    }
+    if (speedController.value > props.speed) {
+      speedController.value = 0;
+    }
+    if (delta > lastPosition.value) {
+      if (spinner.current >= 0 && spinner.current < spinner.size && props.images.length > 0) {
+        spinner.current += 1;
+        spinner.currentPath = props.images[spinner.current - 1];
+      } else if (props.infinite && props.images.length > 0) {
+        spinner.current = 1;
+        spinner.currentPath = props.images[spinner.current - 1];
       }
-      this.touch.isMoving = true;
-      this.touch.isDragging = true;
-      this.touch.initialX = event.touches[0].pageX;
-    },
-    handleTouchEnd() {
-      this.touch.isMoving = false;
-    },
-    handleTouchMove(event) {
-      if (this.touch.isDragging) {
-        const delta = -(this.touch.initialX - event.touches[0].pageX);
-        this.handleMovement(delta);
+    } else if (delta < lastPosition.value) {
+      if (spinner.current >= 0 && spinner.current - 1 > 0 && props.images.length > 0) {
+        spinner.current -= 1;
+        spinner.currentPath = props.images[spinner.current - 1];
+      } else if (props.infinite && props.images.length > 0) {
+        spinner.current = spinner.size;
+        spinner.currentPath = props.images[spinner.current - 1];
       }
-    },
-    spinImages(index, lastIndex) {
-      let i = index;
-      if (i !== lastIndex) {
-        this.spinner.currentPath = this.images[i];
-        this.animationRequestID = window.requestAnimationFrame(() => this.spinImages(i, lastIndex));
-      } else {
-        this.stopAnimation();
-        [this.spinner.currentPath] = this.images;
-        return;
-      }
-      i += 1;
-    },
-    stopAnimation() {
-      if (this.animationRequestID) {
-        window.cancelAnimationFrame(this.animationRequestID);
-        this.animationRequestID = null;
-      }
-    },
-    handleMovement(delta) {
-      this.speedController += 1;
-      if (this.speedController < this.speed) {
-        return;
-      }
-      if (this.speedController > this.speed) {
-        this.speedController = 0;
-      }
-      if (delta > this.lastPosition) {
-        if (this.spinner.current >= 0 && this.spinner.current < this.spinner.size) {
-          this.spinner.current += 1;
-          this.spinner.currentPath = this.images[this.spinner.current - 1];
-        } else if (this.infinite) {
-          this.spinner.current = 1;
-          this.spinner.currentPath = this.images[this.spinner.current - 1];
-        }
-      } else if (delta < this.lastPosition) {
-        if (this.spinner.current >= 0 && this.spinner.current - 1 > 0) {
-          this.spinner.current -= 1;
-          this.spinner.currentPath = this.images[this.spinner.current - 1];
-        } else if (this.infinite) {
-          this.spinner.current = this.spinner.size;
-          this.spinner.currentPath = this.images[this.spinner.current - 1];
-        }
-      }
-      this.lastPosition = delta;
-    },
-  },
-};
+    }
+    lastPosition.value = delta;
+  }
 </script>
 

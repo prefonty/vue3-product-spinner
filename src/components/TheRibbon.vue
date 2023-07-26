@@ -1,7 +1,7 @@
 <template>
   <div>
     <a
-      href="https://github.com/micheleriva/vue-product-spinner"
+      href="https://github.com/prefonty/vue3-product-spinner"
       class="github-corner"
       aria-label="View source on GitHub"
       ><svg
@@ -29,7 +29,7 @@
 
 <script>
 export default {
-  name: "Ribbon"
+  name: "TheRibbon"
 };
 </script>
 

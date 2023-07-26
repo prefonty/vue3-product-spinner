@@ -1,4 +1,8 @@
 export default function preloadImages(srcs) {
+
+  if (!Array.isArray(srcs)) {
+    throw new Error('Invalid input: srcs must be an array');
+  }
   function loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
