@@ -1,14 +1,13 @@
 {
-  "name": "vue-product-spinner",
-  "version": "0.2.0",
+  "name": "vue3-product-spinner",
+  "version": "1.0.0
   "private": false,
   "author": {
-    "name": "Michele Riva",
-    "email": "ciao@micheleriva.it",
-    "url": "https://www.micheleriva.it"
+    "name": "prefonty",
+    "email": "prefonty@gmail.com"
   },
   "bugs": {
-    "url": "https://github.com/micheleriva/vue-product-spinner/issues"
+    "url": "https://github.com/prefonty/vue3-product-spinner/issues"
   },
   "keywords": [
     "vue",
@@ -21,7 +20,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/micheleriva/vue-product-spinner"
+    "url": "https://github.com/prefonty/vue3-product-spinner"
   },
   "main": "./dist/VueProductSpinner.common.js",
   "files": [
