@@ -30,8 +30,7 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, onUnmounted, reactive, nextTick } from 'vue';
-  import { defineProps } from 'vue';
+  import { ref, onMounted, onUnmounted, reactive, nextTick, defineProps  } from 'vue';
   import PreloadImages from "../PreloadImages.js";
 
   const props = defineProps({
@@ -72,8 +71,6 @@
     },
   });
 
-  console.log('Initial props.images:', props.images);
-  console.log('Props: ', props);
   const imagesPreloaded = ref(false);
   const speedController = ref(0);
   const spinner = reactive({
@@ -95,14 +92,11 @@
   const lastPosition = ref(0);
   const componentContainer = ref(null);
 
-  const handleMouseDragging = () => {
-    mouse.isDragging = false;
-  }
+  // Handlers for mouse and touch dragging
+  const handleMouseDragging = () => { mouse.isDragging = false; }
+  const handleTouchDragging = () => { touch.isDragging = false; }
 
-  const handleTouchDragging = () => {
-    touch.isDragging = false;
-  }
-
+  // Handler for mouse wheel
   const handleWheel = (event) => {
     if (props.mouseWheel) {
       event.preventDefault();
@@ -110,8 +104,8 @@
     }
   }
 
+  // Initialize the spinner
   const initSpinner = () => {
-    console.log('Init spinner');
     spinner.size = props.images.length;
     if (props.animation) {
       spinImages(0, spinner.size);
@@ -120,76 +114,53 @@
     }
   }
 
+  // Preload images
   const handlePreload = async () => {
     if (Array.isArray(props.images) && props.images.length > 0) {
-      console.log('Preloading images...');
       await PreloadImages(props.images)
         .then(() => {
-          console.log('Images have been preloaded.');
           imagesPreloaded.value = true;
-          console.log('imagesPreloaded value after preloading:', imagesPreloaded.value);
         })
         .catch(error => {
           console.error('Error preloading images:', error);
         });
-    } else {
-      console.log('No images to preload.');
     }
-    console.log('imagesPreloaded.value:', imagesPreloaded.value);
   }
 
+  // When component is mounted
   onMounted(async () => {
     await nextTick();
-    console.log("componentContainer at mount:", componentContainer.value);
-
     if (Array.isArray(props.images) && props.images.length > 0) {
       imagesPreloaded.value = false;
       await handlePreload();
       initSpinner();
     }
-    console.log(imagesPreloaded.value);
 
-    window.addEventListener(
-      'mouseup',
-      handleMouseDragging,
-    );
-    window.addEventListener(
-      'touchend',
-      handleTouchDragging,
-    );
+    window.addEventListener('mouseup', handleMouseDragging);
+    window.addEventListener('touchend', handleTouchDragging);
 
     if (props.mouseWheel && componentContainer.value) {
-      componentContainer.value.addEventListener(
-        'wheel',
-        handleWheel,
-        false,
-      );
+      componentContainer.value.addEventListener('wheel', handleWheel, false);
     }
   });
 
+  // When component is unmounted
   onUnmounted(() => {
     if (props.mouseWheel && componentContainer.value) {
-      componentContainer.value.removeEventListener(
-        'wheel',
-        handleWheel,
-      );
+      componentContainer.value.removeEventListener('wheel', handleWheel);
     }
-    window.removeEventListener(
-      'mouseup',
-      handleMouseDragging,
-    );
-    window.removeEventListener(
-      'touchend',
-      handleTouchDragging,
-    );
+    window.removeEventListener('mouseup', handleMouseDragging);
+    window.removeEventListener('touchend', handleTouchDragging);
   });
 
   const handleKeydown = (event) => {
-    if (event.keyCode === 39) {
+    const LEFT_ARROW = 37;
+    const RIGHT_ARROW = 39;
+    if (event.keyCode === RIGHT_ARROW) {
       event.preventDefault();
       handleMovement(lastPosition.value + 1);
     }
-    if (event.keyCode === 37) {
+    if (event.keyCode === LEFT_ARROW) {
       event.preventDefault();
       handleMovement(lastPosition.value - 1);
     }

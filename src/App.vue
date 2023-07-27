@@ -1,14 +1,12 @@
 <template>
   <div id="app">
-    <TheRibbon/>
-    <DemoCommands :onNewCommand="handleCommands"/>
-    <div class="demo demo-2">
+    <div class="demo">
       <VueProductSpinner
-          :images="props.shoeImages"
-          :slider="props.slider"
-          :infinite="props.infinite"
-          :mouseWheel="props.mouseWheel"
-          :animation="props.animation"
+          :images="shoeImages"
+          :slider="slider"
+          :infinite="infinite"
+          :mouseWheel="mouseWheel"
+          :animation="animation"
           sliderClass="demo-slider"
       >
         <PulseLoader color="#3f51b5"/>
@@ -17,36 +15,23 @@
   </div>
 </template>
 
+
 <script setup>
-import { reactive } from 'vue';
+import { useProps } from './composables/props';
 import VueProductSpinner from "./components/VueProductSpinner.vue";
-import DemoCommands from "./components/DemoCommands.vue";
-import TheRibbon from "./components/TheRibbon.vue";
 import PulseLoader from "vue-spinner/src/PulseLoader.vue";
 
-const production = window.location.hostname !== "localhost";
-
-const shoe = () =>
-    [...Array(71)].map(
-        (_img, i) =>
-            `${production ? "/vue-product-spinner" : ""}/imgs/shoe/UnderArmour-${i + 1}.jpg`
-    );
-
-let props = reactive({
-    slider: true,
-    infinite: true,
-    mouseWheel: true,
-    animation: true,
-    shoeImages: shoe(),
-    commands: null,
-});
-
-const handleCommands = (commands) => {
-    props.commands = {...props.commands, ...commands};
-}
+const {
+  slider,
+  infinite,
+  mouseWheel,
+  animation,
+  shoeImages,
+} = useProps();
 </script>
 
-<style lang="postcss">
+
+<style>
 body {
   margin: 0;
   font-family: sans-serif;
@@ -63,5 +48,35 @@ body {
   align-items: center;
   width: 100%;
   height: 100vh;
+}
+
+.demo-slider {
+  -webkit-appearance: none;
+  width: 90%;
+  height: 15px;
+  margin-left: 5%;
+  border-radius: 5px;
+  background: #e8e8e8;
+  outline: none;
+  -webkit-transition: 0.2s;
+  transition: opacity 0.2s;
+}
+
+.demo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: royalblue;
+  cursor: pointer;
+}
+
+.demo-slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: royalblue;
+  cursor: pointer;
 }
 </style>
