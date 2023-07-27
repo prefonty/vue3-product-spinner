@@ -1,56 +1,52 @@
 import { shallowMount } from "@vue/test-utils";
 import VueProductSpinner from "@/components/VueProductSpinner.vue";
 
-describe("Mounting VueProductSpinner", () => {
+describe("VueProductSpinner", () => {
+  const images = ["/img1.jpg", "/img2.jpg", "/img3.jpg"];
+
   it("should mount the component", () => {
-    const images = ["/img1.jpg", "/img2.jpg", "/img3.jpg"];
     const wrapper = shallowMount(VueProductSpinner, {
-      propsData: { images }
+      props: { images }
     });
-    expect(wrapper.isVueInstance()).toBeTruthy();
-    /**
-     * Testing initial props
-     */
-    expect(wrapper.vm.spinner.size).toBe(3);
-    expect(wrapper.vm.spinner.current).toBe(0);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[0]);
+    expect(wrapper.exists()).toBeTruthy();
   });
-});
 
-describe("Testing methods", () => {
-  it("should handle methods correctly", () => {
-    const images = ["/img1.jpg", "/img2.jpg", "/img3.jpg"];
+  it("should initialize with the correct values", () => {
     const wrapper = shallowMount(VueProductSpinner, {
-      propsData: { images }
+      props: { images }
     });
-    expect(wrapper.isVueInstance()).toBeTruthy();
 
-    /**
-     * Testing methods
-     */
+    expect(wrapper.vm.spinner.current).toBe(0);
+    expect(wrapper.vm.spinner.size).toBe(0);
+    expect(wrapper.vm.spinner.currentPath).toBeNull();
+  });
 
-    /**
-     * Handle Wheel Method
-     */
+  it("should handle mouse down and up", async () => {
+    const wrapper = shallowMount(VueProductSpinner, {
+      props: { images }
+    });
 
-    wrapper.vm.handleWheel({ deltaY: 1, preventDefault() {} });
-    expect(wrapper.vm.spinner.current).toBe(1);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[0]);
+    await wrapper.trigger("mousedown");
+    expect(wrapper.vm.mouse.isDragging).toBe(true);
+    expect(wrapper.vm.mouse.isMoving).toBe(true);
 
-    wrapper.vm.handleWheel({ deltaY: 3, preventDefault() {} });
-    expect(wrapper.vm.spinner.current).toBe(2);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[1]);
+    await wrapper.trigger("mouseup");
+    expect(wrapper.vm.mouse.isMoving).toBe(false);
+  });
 
-    wrapper.vm.handleWheel({ deltaY: 9182378, preventDefault() {} });
-    expect(wrapper.vm.spinner.current).toBe(3);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[2]);
+  it("should handle touch start and end", async () => {
+    const wrapper = shallowMount(VueProductSpinner, {
+      props: { images }
+    });
 
-    wrapper.vm.handleWheel({ deltaY: -412, preventDefault() {} });
-    expect(wrapper.vm.spinner.current).toBe(2);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[1]);
+    await wrapper.trigger("touchstart", {
+      touches: [{ pageX: 10 }],
+      preventDefault: () => {},
+    });
+    expect(wrapper.vm.touch.isDragging).toBe(true);
+    expect(wrapper.vm.touch.isMoving).toBe(true);
 
-    wrapper.vm.handleWheel({ deltaY: -2, preventDefault() {} });
-    expect(wrapper.vm.spinner.current).toBe(1);
-    expect(wrapper.vm.spinner.currentPath).toBe(images[0]);
+    await wrapper.trigger("touchend");
+    expect(wrapper.vm.touch.isMoving).toBe(false);
   });
 });

@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, onUnmounted, reactive, nextTick, defineProps  } from 'vue';
+  import { ref, onMounted, onUnmounted, reactive, defineProps  } from 'vue';
   import PreloadImages from "../PreloadImages.js";
 
   const props = defineProps({
@@ -92,11 +92,9 @@
   const lastPosition = ref(0);
   const componentContainer = ref(null);
 
-  // Handlers for mouse and touch dragging
   const handleMouseDragging = () => { mouse.isDragging = false; }
   const handleTouchDragging = () => { touch.isDragging = false; }
 
-  // Handler for mouse wheel
   const handleWheel = (event) => {
     if (props.mouseWheel) {
       event.preventDefault();
@@ -104,7 +102,6 @@
     }
   }
 
-  // Initialize the spinner
   const initSpinner = () => {
     spinner.size = props.images.length;
     if (props.animation) {
@@ -114,7 +111,6 @@
     }
   }
 
-  // Preload images
   const handlePreload = async () => {
     if (Array.isArray(props.images) && props.images.length > 0) {
       await PreloadImages(props.images)
@@ -127,9 +123,7 @@
     }
   }
 
-  // When component is mounted
   onMounted(async () => {
-    await nextTick();
     if (Array.isArray(props.images) && props.images.length > 0) {
       imagesPreloaded.value = false;
       await handlePreload();
@@ -144,7 +138,6 @@
     }
   });
 
-  // When component is unmounted
   onUnmounted(() => {
     if (props.mouseWheel && componentContainer.value) {
       componentContainer.value.removeEventListener('wheel', handleWheel);
@@ -258,4 +251,3 @@
     lastPosition.value = delta;
   }
 </script>
-
